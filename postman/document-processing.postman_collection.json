@@ -1,0 +1,89 @@
+{
+  "info": {
+    "name": "Document Processing System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "documentId", "value": "" },
+    { "key": "uploadUrl", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Health check",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      }
+    },
+    {
+      "name": "2. Create document (get upload URL)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 201', () => pm.response.to.have.status(201));",
+              "const body = pm.response.json();",
+              "if (body.uploadUrl) {",
+              "  pm.collectionVariables.set('uploadUrl', body.uploadUrl);",
+              "  pm.collectionVariables.set('documentId', body.document.documentId);",
+              "  console.log('Saved documentId:', body.document.documentId);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fileName\": \"test.pdf\",\n  \"contentType\": \"application/pdf\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/documents"
+      }
+    },
+    {
+      "name": "3. Upload file to S3 (presigned URL)",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/pdf" }],
+        "body": {
+          "mode": "file",
+          "file": {}
+        },
+        "url": "{{uploadUrl}}"
+      }
+    },
+    {
+      "name": "4. Get document",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/documents/{{documentId}}"
+      }
+    },
+    {
+      "name": "Error: unsupported file type",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fileName\": \"virus.exe\",\n  \"contentType\": \"application/octet-stream\"\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": "{{baseUrl}}/documents"
+      }
+    },
+    {
+      "name": "Error: document not found",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/documents/does-not-exist"
+      }
+    }
+  ]
+}
