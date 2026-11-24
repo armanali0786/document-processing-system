@@ -1,8 +1,14 @@
 import { env } from "./config/env";
 import { app } from "./app";
 
-app.listen(env.PORT, () => {
-  console.log("--------------------------------");
+app.listen(env.PORT, (error?: Error) => {
+  // Express 5 calls this callback with an error if the server fails to start
+  if (error) {
+    console.error(`Failed to start server on port ${env.PORT}:`, error.message);
+    process.exit(1);
+  }
+
+  console.log("---- ----------------------------");
   console.log("Document Processing System API");
   console.log("--------------------------------");
   console.log("Environment:   ", env.NODE_ENV);
