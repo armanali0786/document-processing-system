@@ -22,6 +22,7 @@ export const documentsRouter = Router();
 const createDocumentSchema = z.object({
   fileName: z.string().min(1).max(255),
   contentType: z.string().min(1),
+  fileSize: z.number().int().positive(), // bytes
 });
 
 // GET /documents  →  list all records (newest first)
@@ -40,17 +41,24 @@ documentsRouter.post("/", async (req, res) => {
     });
   }
 
+  const maxBytes = env.MAX_FILE_SIZE_MB * 1024 * 1024;
+  if (parsed.data.fileSize > maxBytes) {
+    return res.status(413).json({
+      error: `File is too large. Maximum size is ${env.MAX_FILE_SIZE_MB} MB.`,
+    });
+  }
+
   // Keep only safe characters so the name can't create odd S3 paths ("../", "/", etc.)
   const fileName = parsed.data.fileName
     .split(/[\\/]/)
     .pop()!
     .replace(/[^a-zA-Z0-9._-]/g, "_");
-  const { contentType } = parsed.data;
+  const { contentType, fileSize } = parsed.data;
   const documentId = randomUUID();
 
   let upload;
   try {
-    upload = await generateUploadUrl(fileName, contentType, documentId);
+    upload = await generateUploadUrl(fileName, contentType, documentId, fileSize);
   } catch (err) {
     if (err instanceof Error && err.message === "Unsupported file type") {
       return res.status(400).json({

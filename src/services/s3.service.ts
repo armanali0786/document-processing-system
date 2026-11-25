@@ -16,10 +16,43 @@ const allowedTypes: Record<string, string[]> = {
 };
 
 // Presigned PUT link: lets the client upload one file directly to S3
+// export async function generateUploadUrl(
+//   fileName: string,
+//   contentType: string,
+//   documentId: string
+// ) {
+//   const fileExtension = fileName.split(".").pop()?.toLowerCase();
+
+//   if (!fileExtension || !allowedTypes[fileExtension]?.includes(contentType)) {
+//     throw new Error("Unsupported file type");
+//   }
+
+//   const key = `documents/${documentId}/${fileName}`;
+
+//   const command = new PutObjectCommand({
+//     Bucket: env.S3_BUCKET_NAME,
+//     Key: key,
+//     ContentType: contentType,
+//   });
+
+//   const uploadUrl = await getSignedUrl(s3Client, command, {
+//     expiresIn: env.PRESIGNED_URL_EXPIRY,
+//   });
+
+//   return {
+//     uploadUrl,
+//     s3Key: key,
+//   };
+// }
+
+// Presigned PUT link: lets the client upload one file directly to S3.
+// Content-Length and Content-Type are signed, so S3 rejects any upload
+// whose size or type differs from what the client declared.
 export async function generateUploadUrl(
   fileName: string,
   contentType: string,
-  documentId: string
+  documentId: string,
+  fileSize: number
 ) {
   const fileExtension = fileName.split(".").pop()?.toLowerCase();
 
@@ -33,10 +66,12 @@ export async function generateUploadUrl(
     Bucket: env.S3_BUCKET_NAME,
     Key: key,
     ContentType: contentType,
+    ContentLength: fileSize,
   });
 
   const uploadUrl = await getSignedUrl(s3Client, command, {
     expiresIn: env.PRESIGNED_URL_EXPIRY,
+    signableHeaders: new Set(["content-type"]), // not signed by default
   });
 
   return {
@@ -44,6 +79,7 @@ export async function generateUploadUrl(
     s3Key: key,
   };
 }
+
 
 // Presigned GET link: lets the client view/download one file
 export async function generateDownloadUrl(s3Key: string) {

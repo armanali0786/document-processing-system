@@ -1,0 +1,31 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DocumentFilesReadWriteDelete",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"],
+      "Resource": "arn:aws:s3:::document-processing-system-arman-dev/documents/*"
+    },
+    {
+      "Sid": "ListDocumentsPrefixOnly",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::document-processing-system-arman-dev",
+      "Condition": { "StringLike": { "s3:prefix": ["documents/*"] } }
+    },
+    {
+      "Sid": "DocumentMetadataTable",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:PutItem",
+        "dynamodb:GetItem",
+        "dynamodb:UpdateItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:Scan",
+        "dynamodb:DescribeTable"
+      ],
+      "Resource": "arn:aws:dynamodb:ap-southeast-2:232723757987:table/document-metadata-dev"
+    }
+  ]
+}

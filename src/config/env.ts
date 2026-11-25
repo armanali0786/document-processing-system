@@ -20,7 +20,12 @@ const envSchema = z.object({
     .int()
     .min(1)
     .max(3600)
-    .default(300)
+    .default(300),
+    
+  MAX_FILE_SIZE_MB: z.coerce.number()
+    .positive()
+    .max(5120)
+    .default(10)
 });
 
 const result = envSchema.safeParse(process.env);
